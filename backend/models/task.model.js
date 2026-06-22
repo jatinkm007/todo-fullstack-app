@@ -5,7 +5,8 @@ const taskSchema = new mongoose.Schema(
     title: {
       type: String,
       required: [true, "Task title is required"],
-      trim: true
+      trim: true,
+      minlength: [2, "Title should have at least 2 characters"]
     },
 
     description: {
@@ -24,6 +25,4 @@ const taskSchema = new mongoose.Schema(
   }
 );
 
-const Task = mongoose.model("Task", taskSchema);
-
-module.exports = Task;
+module.exports = mongoose.model("Task", taskSchema);

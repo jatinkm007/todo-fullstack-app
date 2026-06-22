@@ -1,27 +1,69 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/tasks";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/tasks";
 
-export const getTasks = () => {
-  return axios.get(API_URL);
-};
+function getErrorMessage(error) {
+  if (error.response && error.response.data && error.response.data.message) {
+    return error.response.data.message;
+  }
 
-export const createTask = (taskData) => {
-  return axios.post(API_URL, taskData);
-};
+  return "Something went wrong while connecting to server";
+}
 
-export const updateTask = (id, taskData) => {
-  return axios.put(`${API_URL}/${id}`, taskData);
-};
+export async function fetchTasks(searchText = "") {
+  try {
+    let url = API_URL;
 
-export const updateTaskStatus = (id, completed) => {
-  return axios.patch(`${API_URL}/${id}/status`, { completed });
-};
+    if (searchText.trim() !== "") {
+      url = API_URL + "?search=" + encodeURIComponent(searchText);
+    }
 
-export const deleteTask = (id) => {
-  return axios.delete(`${API_URL}/${id}`);
-};
+    const res = await axios.get(url);
+    return res.data.tasks;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
 
-export const searchTasks = (keyword) => {
-  return axios.get(`${API_URL}/search?q=${keyword}`);
-};
+export async function addTask(task) {
+  try {
+    const res = await axios.post(API_URL, task);
+    return res.data.task;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function editTask(id, task) {
+  try {
+    const res = await axios.put(API_URL + "/" + id, task);
+    return res.data.task;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function toggleTaskStatus(id, completed) {
+  try {
+    const res = await axios.patch(API_URL + "/" + id + "/status", {
+      completed: completed
+    });
+
+    return res.data.task;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function removeTask(id) {
+  try {
+    await axios.delete(API_URL + "/" + id);
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+
+
+
+// const API_URL = "https://todo-backend-w3n2.onrender.com/api/tasks";

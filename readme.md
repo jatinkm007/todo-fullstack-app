@@ -1,48 +1,33 @@
 # To-Do List Full Stack App
 
-This is a full-stack To-Do List application made using React, Node.js, Express.js, and MongoDB.
+This is my full-stack To-Do List application made with React, Node.js, Express.js, and MongoDB.
+
+The project has two parts:
+
+- Backend API using Express and MongoDB
+- React frontend connected to backend using Axios
 
 ## Features
 
-- Add a new task
+- Add a task
 - View all tasks
-- Update task details
-- Mark task as complete or pending
+- Edit a task
 - Delete a task
-- Search tasks
-- Frontend and backend connected using Axios
-
-## Tech Stack
-
-Frontend:
-- React
-- Axios
-- CSS
-
-Backend:
-- Node.js
-- Express.js
-- MongoDB
-- Mongoose
+- Mark task as complete or pending
+- Search task by title or description
+- Shows loading and error messages on frontend
 
 ## Folder Structure
 
 todo-fullstack-app/
 - backend/
-  - config/
-  - controllers/
-  - models/
-  - routes/
-  - services/
-  - middleware/
 - frontend/
-  - src/
-    - api/
-    - components/
+- README.md
 
-## How to Run Backend
+## Backend Setup
+
+Go to backend folder:
 
 ```bash
 cd backend
 npm install
-npm run dev

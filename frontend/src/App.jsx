@@ -1,116 +1,215 @@
 import { useEffect, useState } from "react";
-import TaskForm from "./components/TaskForm";
-import TaskList from "./components/TaskList";
-
 import {
-  getTasks,
-  createTask,
-  deleteTask,
-  updateTaskStatus,
-  searchTasks
+  fetchTasks,
+  addTask,
+  editTask,
+  toggleTaskStatus,
+  removeTask
 } from "./api/taskApi";
 
 import "./App.css";
 
 function App() {
   const [tasks, setTasks] = useState([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [searchText, setSearchText] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
 
-  const loadTasks = async () => {
+  const [editingId, setEditingId] = useState(null);
+
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function loadTasks(searchValue = "") {
     try {
       setLoading(true);
-      setErrorMessage("");
+      setError("");
 
-      const res = await getTasks();
-      setTasks(res.data.data);
-    } catch (error) {
-      setErrorMessage("Failed to load tasks");
+      const data = await fetchTasks(searchValue);
+      setTasks(data);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  useEffect(() => {
+  useEffect(function () {
     loadTasks();
   }, []);
 
-  const handleAddTask = async (taskData) => {
-    try {
-      await createTask(taskData);
-      loadTasks();
-    } catch (error) {
-      alert("Task could not be added");
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    setError("");
+    setMessage("");
+
+    if (title.trim().length < 2) {
+      setError("Please enter a task title with at least 2 characters");
+      return;
     }
-  };
 
-  const handleDeleteTask = async (id) => {
     try {
-      await deleteTask(id);
-      loadTasks();
-    } catch (error) {
-      alert("Task could not be deleted");
-    }
-  };
+      if (editingId) {
+        await editTask(editingId, {
+          title: title,
+          description: description
+        });
 
-  const handleToggleStatus = async (task) => {
-    try {
-      await updateTaskStatus(task._id, !task.completed);
-      loadTasks();
-    } catch (error) {
-      alert("Status could not be updated");
-    }
-  };
+        setMessage("Task updated");
+        setEditingId(null);
+      } else {
+        await addTask({
+          title: title,
+          description: description
+        });
 
-  const handleSearch = async () => {
-    try {
-      setLoading(true);
-
-      if (searchText.trim() === "") {
-        loadTasks();
-        return;
+        setMessage("Task added");
       }
 
-      const res = await searchTasks(searchText);
-      setTasks(res.data.data);
-    } catch (error) {
-      setErrorMessage("Search failed");
-    } finally {
-      setLoading(false);
+      setTitle("");
+      setDescription("");
+      loadTasks(searchText);
+    } catch (err) {
+      setError(err.message);
     }
-  };
+  }
+
+  function startEditing(task) {
+    setEditingId(task._id);
+    setTitle(task.title);
+    setDescription(task.description || "");
+    setMessage("");
+    setError("");
+  }
+
+  async function handleDelete(id) {
+    try {
+      setError("");
+      setMessage("");
+
+      await removeTask(id);
+      setMessage("Task deleted");
+      loadTasks(searchText);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleStatusChange(task) {
+    try {
+      setError("");
+      setMessage("");
+
+      await toggleTaskStatus(task._id, !task.completed);
+      loadTasks(searchText);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  function handleSearch(e) {
+    e.preventDefault();
+    loadTasks(searchText);
+  }
+
+  function clearSearch() {
+    setSearchText("");
+    loadTasks("");
+  }
 
   return (
-    <div className="app">
-      <h1>To-Do List App</h1>
-      <p>React frontend connected with Express and MongoDB backend</p>
+    <div className="page">
+      <div className="todo-box">
+        <h1>To-Do List App</h1>
+        <p className="sub-heading">
+          React frontend connected with Express and MongoDB backend.
+        </p>
 
-      <TaskForm onAddTask={handleAddTask} />
+        <form onSubmit={handleSubmit} className="task-form">
+          <input
+            type="text"
+            placeholder="Task title"
+            value={title}
+            onChange={function (e) {
+              setTitle(e.target.value);
+            }}
+          />
 
-      <div className="search-box">
-        <input
-          type="text"
-          placeholder="Search task"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-        />
+          <input
+            type="text"
+            placeholder="Task description"
+            value={description}
+            onChange={function (e) {
+              setDescription(e.target.value);
+            }}
+          />
 
-        <button onClick={handleSearch}>Search</button>
-        <button onClick={loadTasks}>Show All</button>
+          <button type="submit">
+            {editingId ? "Update Task" : "Add Task"}
+          </button>
+        </form>
+
+        <form onSubmit={handleSearch} className="search-form">
+          <input
+            type="text"
+            placeholder="Search task"
+            value={searchText}
+            onChange={function (e) {
+              setSearchText(e.target.value);
+            }}
+          />
+
+          <button type="submit">Search</button>
+          <button type="button" onClick={clearSearch}>
+            Show All
+          </button>
+        </form>
+
+        {error && <p className="error-box">{error}</p>}
+        {message && <p className="success-box">{message}</p>}
+        {loading && <p className="loading">Loading tasks...</p>}
+
+        {!loading && tasks.length === 0 && (
+          <p className="empty-text">No tasks found</p>
+        )}
+
+        <div className="task-list">
+          {tasks.map(function (task) {
+            return (
+              <div className="task-card" key={task._id}>
+                <div>
+                  <h3 className={task.completed ? "done" : ""}>
+                    {task.title}
+                  </h3>
+                  <p>{task.description}</p>
+                  <small>
+                    Status: {task.completed ? "Completed" : "Pending"}
+                  </small>
+                </div>
+
+                <div className="task-buttons">
+                  <button onClick={() => handleStatusChange(task)}>
+                    {task.completed ? "Pending" : "Complete"}
+                  </button>
+
+                  <button onClick={() => startEditing(task)}>
+                    Edit
+                  </button>
+
+                  <button
+                    className="delete-btn"
+                    onClick={() => handleDelete(task._id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-
-      {loading && <p>Loading tasks...</p>}
-
-      {errorMessage && <p className="error">{errorMessage}</p>}
-
-      {!loading && (
-        <TaskList
-          tasks={tasks}
-          onDelete={handleDeleteTask}
-          onToggle={handleToggleStatus}
-        />
-      )}
     </div>
   );
 }

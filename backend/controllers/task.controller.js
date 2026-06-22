@@ -1,68 +1,62 @@
 const taskService = require("../services/task.service");
 
-const getTasks = async (req, res, next) => {
+async function getTasks(req, res, next) {
   try {
-    const tasks = await taskService.getAllTasks();
+    const search = req.query.search || "";
+    const tasks = await taskService.findTasks(search);
 
     res.status(200).json({
       success: true,
-      count: tasks.length,
-      data: tasks
+      total: tasks.length,
+      tasks: tasks
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
-};
+}
 
-const getSingleTask = async (req, res, next) => {
+async function createTask(req, res, next) {
   try {
-    const task = await taskService.getTaskById(req.params.id);
+    const title = req.body.title;
+    const description = req.body.description;
 
-    if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: "Task not found"
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: task
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const createTask = async (req, res, next) => {
-  try {
-    const { title, description } = req.body;
-
-    if (!title || title.trim() === "") {
+    if (!title || title.trim().length < 2) {
       return res.status(400).json({
         success: false,
-        message: "Title is required"
+        message: "Please enter a task title with at least 2 characters"
       });
     }
 
-    const task = await taskService.createTask({
-      title,
-      description
+    const newTask = await taskService.addTask({
+      title: title.trim(),
+      description: description
     });
 
     res.status(201).json({
       success: true,
-      message: "Task created successfully",
-      data: task
+      message: "Task added",
+      task: newTask
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
-};
+}
 
-const updateTask = async (req, res, next) => {
+async function updateTask(req, res, next) {
   try {
-    const task = await taskService.updateTask(req.params.id, req.body);
+    const id = req.params.id;
+
+    if (!req.body.title || req.body.title.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Title cannot be empty"
+      });
+    }
+
+    const task = await taskService.editTask(id, {
+      title: req.body.title.trim(),
+      description: req.body.description || ""
+    });
 
     if (!task) {
       return res.status(404).json({
@@ -71,21 +65,29 @@ const updateTask = async (req, res, next) => {
       });
     }
 
-    res.status(200).json({
+    res.json({
       success: true,
-      message: "Task updated successfully",
-      data: task
+      message: "Task updated",
+      task: task
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
-};
+}
 
-const updateStatus = async (req, res, next) => {
+async function updateTaskStatus(req, res, next) {
   try {
-    const { completed } = req.body;
+    const id = req.params.id;
+    const completed = req.body.completed;
 
-    const task = await taskService.updateTaskStatus(req.params.id, completed);
+    if (typeof completed !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "completed value must be true or false"
+      });
+    }
+
+    const task = await taskService.changeStatus(id, completed);
 
     if (!task) {
       return res.status(404).json({
@@ -94,58 +96,40 @@ const updateStatus = async (req, res, next) => {
       });
     }
 
-    res.status(200).json({
+    res.json({
       success: true,
-      message: "Task status updated",
-      data: task
+      message: "Status changed",
+      task: task
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
-};
+}
 
-const deleteTask = async (req, res, next) => {
+async function deleteTask(req, res, next) {
   try {
-    const task = await taskService.deleteTask(req.params.id);
+    const deletedTask = await taskService.removeTask(req.params.id);
 
-    if (!task) {
+    if (!deletedTask) {
       return res.status(404).json({
         success: false,
         message: "Task not found"
       });
     }
 
-    res.status(200).json({
+    res.json({
       success: true,
-      message: "Task deleted successfully"
+      message: "Task deleted"
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
-};
-
-const searchTasks = async (req, res, next) => {
-  try {
-    const keyword = req.query.q || "";
-
-    const tasks = await taskService.searchTasks(keyword);
-
-    res.status(200).json({
-      success: true,
-      count: tasks.length,
-      data: tasks
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+}
 
 module.exports = {
   getTasks,
-  getSingleTask,
   createTask,
   updateTask,
-  updateStatus,
-  deleteTask,
-  searchTasks
+  updateTaskStatus,
+  deleteTask
 };

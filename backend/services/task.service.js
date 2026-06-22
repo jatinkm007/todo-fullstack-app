@@ -1,48 +1,62 @@
 const Task = require("../models/task.model");
 
-const getAllTasks = async () => {
-  return await Task.find().sort({ createdAt: -1 });
-};
+async function findTasks(searchText) {
+  let filter = {};
 
-const getTaskById = async (id) => {
-  return await Task.findById(id);
-};
+  if (searchText) {
+    filter = {
+      $or: [
+        { title: { $regex: searchText, $options: "i" } },
+        { description: { $regex: searchText, $options: "i" } }
+      ]
+    };
+  }
 
-const createTask = async (data) => {
-  return await Task.create(data);
-};
+  const tasks = await Task.find(filter).sort({ createdAt: -1 });
+  return tasks;
+}
 
-const updateTask = async (id, data) => {
-  return await Task.findByIdAndUpdate(id, data, {
-    new: true,
-    runValidators: true
+async function addTask(taskData) {
+  const task = new Task({
+    title: taskData.title,
+    description: taskData.description || ""
   });
-};
 
-const updateTaskStatus = async (id, completed) => {
+  return await task.save();
+}
+
+async function editTask(id, data) {
+  const updatedTask = await Task.findByIdAndUpdate(
+    id,
+    {
+      title: data.title,
+      description: data.description
+    },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+
+  return updatedTask;
+}
+
+async function changeStatus(id, completedValue) {
   return await Task.findByIdAndUpdate(
     id,
-    { completed },
+    { completed: completedValue },
     { new: true }
   );
-};
+}
 
-const deleteTask = async (id) => {
+async function removeTask(id) {
   return await Task.findByIdAndDelete(id);
-};
-
-const searchTasks = async (keyword) => {
-  return await Task.find({
-    title: { $regex: keyword, $options: "i" }
-  });
-};
+}
 
 module.exports = {
-  getAllTasks,
-  getTaskById,
-  createTask,
-  updateTask,
-  updateTaskStatus,
-  deleteTask,
-  searchTasks
+  findTasks,
+  addTask,
+  editTask,
+  changeStatus,
+  removeTask
 };
