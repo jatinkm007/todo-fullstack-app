@@ -7,6 +7,8 @@ The project has two parts:
 - Backend API using Express and MongoDB
 - React frontend connected to backend using Axios
 
+## Live Link   -  https://to-do-full-stack-app.netlify.app/
+
 ## Features
 
 - Add a task
