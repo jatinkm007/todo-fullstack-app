@@ -21,19 +21,25 @@ function App() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function loadTasks(searchValue = "") {
-    try {
-      setLoading(true);
-      setError("");
+async function loadTasks(searchValue = "") {
+  try {
+    setLoading(true);
+    setError("");
 
-      const data = await fetchTasks(searchValue);
+    const data = await fetchTasks(searchValue);
+
+    if (Array.isArray(data)) {
       setTasks(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    } else {
+      setTasks([]);
     }
+  } catch (err) {
+    setError(err.message);
+    setTasks([]);
+  } finally {
+    setLoading(false);
   }
+}
 
   useEffect(function () {
     loadTasks();
